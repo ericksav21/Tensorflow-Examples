@@ -1,3 +1,5 @@
+#https://www.tensorflow.org/get_started/custom_estimators
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -12,6 +14,39 @@ parser.add_argument('--batch_size', default = 100, type = int, help = 'batch siz
 parser.add_argument('--train_steps', default = 1000, type = int,
 						help='number of training steps')
 
+def my_model(features, labels, mode, params):
+	net = tf.feature_column.input_layer(features, params['feature_columns'])
+	for units in params['hidden_units']:
+		net = tf.layers.dense(net, units = units, activation = tf.nn.relu)
+
+	logits = tf.layers.dense(net, params['n_classes'], activation = None)
+
+	predicted_classes = tf.argmax(logits, 1)
+	if mode == tf.estimator.ModeKeys.PREDICT:
+		predictions = {
+			'class_ids': predicted_classes[:, tf.newaxis],
+			'probabilities': tf.nn.softmax(logits),
+			'logits': logits,
+		}
+		return tf.estimator.EstimatorSpec(mode, predictions = predictions)
+
+	loss = tf.losses.sparse_softmax_cross_entropy(labels = labels, logits = logits)
+
+	accuracy = tf.metrics.accuracy(labels = labels,
+								   predictions = predicted_classes,
+								   name = 'acc_op')
+	metrics = {'accuracy': accuracy}
+	tf.summary.scalar('accuracy', accuracy[1])
+
+	if mode == tf.estimator.ModeKeys.EVAL:
+		return tf.estimator.EstimatorSpec(mode, loss = loss, eval_metric_ops = metrics)
+
+	assert mode == tf.estimator.ModeKeys.TRAIN
+	optimizer = tf.train.AdagradOptimizer(learning_rate=0.1)
+	train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+	return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
+
+
 def main(argv):
 	args = parser.parse_args(argv[1:])
 
@@ -21,12 +56,20 @@ def main(argv):
 		my_feature_columns.append(tf.feature_column.numeric_column(key = key))
 
 	#Red neuronal con 2 capas ocultas de 10 neuronas cada una.
-	classifier = tf.estimator.DNNClassifier(
+	'''classifier = tf.estimator.DNNClassifier(
 		feature_columns = my_feature_columns,
 		hidden_units = [10, 10],
 		n_classes = 3,
 		model_dir = 'models'
-	)
+	)'''
+	classifier = tf.estimator.Estimator(
+		model_fn = my_model,
+		params = {
+		'feature_columns': my_feature_columns,
+		'hidden_units': [10, 10],
+		'n_classes': 3,
+	})
+
 
 	classifier.train(
 		input_fn = lambda:iris_data.train_input_fn(train_x, train_y, args.batch_size),
