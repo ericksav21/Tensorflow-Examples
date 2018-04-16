@@ -12,7 +12,7 @@ import iris_data
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', default = 100, type = int, help = 'batch size')
 parser.add_argument('--train_steps', default = 1000, type = int,
-						help='number of training steps')
+						help = 'number of training steps')
 
 def my_model(features, labels, mode, params):
 	net = tf.feature_column.input_layer(features, params['feature_columns'])
@@ -42,9 +42,9 @@ def my_model(features, labels, mode, params):
 		return tf.estimator.EstimatorSpec(mode, loss = loss, eval_metric_ops = metrics)
 
 	assert mode == tf.estimator.ModeKeys.TRAIN
-	optimizer = tf.train.AdagradOptimizer(learning_rate=0.1)
-	train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
-	return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
+	optimizer = tf.train.AdagradOptimizer(learning_rate = 0.1)
+	train_op = optimizer.minimize(loss, global_step = tf.train.get_global_step())
+	return tf.estimator.EstimatorSpec(mode, loss = loss, train_op = train_op)
 
 
 def main(argv):

@@ -10,7 +10,7 @@ import iris_data
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', default = 100, type = int, help = 'batch size')
 parser.add_argument('--train_steps', default = 1000, type = int,
-						help='number of training steps')
+						help = 'number of training steps')
 
 def main(argv):
 	args = parser.parse_args(argv[1:])
